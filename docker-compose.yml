@@ -1,0 +1,64 @@
+version: '2'
+
+services:
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mts_db
+      MYSQL_USER: mts
+      MYSQL_PASSWORD: root
+    ports:
+      - '3111:3306'
+    container_name: dbmts
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend:
+    build: './server'
+    depends_on:
+      - db
+    ports:
+      - "5111:5000"
+    container_name: backmts
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    command: sh -c 'npm start'
+
+  frontend:
+    build: './client'
+    depends_on:
+      - db
+    ports:
+      - "4111:3000"
+    container_name: frontmts
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    command: sh -c 'npm start'
+
+  myadmin:
+    depends_on:
+      - db
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "6111:80"
+    container_name: myadminmts
+    environment:
+      - PMA_HOST=db
+
+  haproxy:
+    image: haproxy:1.9.6
+    container_name: haproxymts
+    volumes:
+      - /dev/log:/dev/log
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "3101:80"
+
+volumes:
+  db_data:

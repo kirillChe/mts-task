@@ -1,0 +1,33 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "Test task for MTS_IT",
+  "author": "Kirill Chernichenko",
+  "license": "ISC",
+  "main": "app.js",
+  "scripts": {
+    "test": "NODE_ENV=test mocha tests/unit/*.js --exit",
+    "start": "pm2-runtime start ecosystem.config.js",
+    "dbcreate": "sequelize db:create && sequelize db:migrate",
+    "migrate": "sequelize db:migrate",
+    "seed": "sequelize db:seed:all"
+  },
+  "devDependencies": {},
+  "dependencies": {
+    "async": "^3.1.0",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.0",
+    "busboy": "^0.3.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "morgan": "^1.9.1",
+    "mysql2": "^1.6.5",
+    "nodemailer": "^6.2.1",
+    "ramda": "^0.26.1",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
+    "require-all": "^3.0.0",
+    "sequelize": "^5.8.12",
+    "sequelize-cli": "^5.5.0"
+  }
+}
