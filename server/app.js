@@ -1,9 +1,14 @@
 const express = require('express')
     , http = require('http')
     , bodyParser = require('body-parser')
-    // , cookieParser = require('cookie-parser')
-    // , cors = require('cors')
-    , morgan = require('morgan');
+    , morgan = require('morgan')
+    , CronJob = require('cron').CronJob
+    , nodemailer = require('nodemailer')
+    , mailerConfig = require('./config/config.json').mailer
+    , transporter = nodemailer.createTransport(mailerConfig)
+    , Op = require('sequelize').Op
+    , R = require('ramda')
+    , moment = require('moment-timezone');
 
 
 //Models
@@ -17,22 +22,12 @@ const app = express();
 
 
 const serverApp = async () => {
-    //TODO Don't leave it as is
-    // app.use(cors({
-    //     // origin: '',
-    //     credentials: true,
-    //     methods: 'GET, POST, OPTIONS, PUT, PATCH, DELETE',
-    //     allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept'
-    // }));
-
     //HTTP request logger
     app.use(morgan('dev'));
 
     // app.use(cookieParser());
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({extended: true}));
-
-    app.use(middleware.publicHandler());
 
     try {
         await models.sequelize.sync();
@@ -48,6 +43,38 @@ const serverApp = async () => {
 
     // server instance
     const server = http.createServer(app);
+    // run cron every hour
+    new CronJob('0 * * * *', async () => {
+        console.log('You will see this message every hour');
+        const {CronData, User} = models;
+        try {
+            let cron = await CronData.findOne();
+            let {numberValue, periodValue} = cron;
+
+            let filter = {
+                where: {
+                    birthDate: {
+                        [Op.and]: {
+                            [Op.gte]: moment().tz('Europe/Moscow').add(numberValue, periodValue).startOf('hour').format('YYYY-MM-DD HH:mm:ss'),
+                            [Op.lte]: moment().tz('Europe/Moscow').add(numberValue, periodValue).endOf('hour').format('YYYY-MM-DD HH:mm:ss')
+                        }
+                    }
+                }
+            };
+
+            let users = await User.findAll(filter);
+            let emails = R.map(R.prop('email'), users);
+            await transporter.sendMail({
+                from: 'Info <info@mts.it>', // sender address
+                to: emails.toString(), // list of receivers
+                subject: `Hello, bro!`, // Subject line
+                text: 'Happy Birthday!' // plain text body
+            })
+
+        } catch (e) {
+            console.log('cron error: ', e);
+        }
+    }, null, true);
 
     // start the app
     server.listen(port, () => console.log(`Server is running on port 3101`));

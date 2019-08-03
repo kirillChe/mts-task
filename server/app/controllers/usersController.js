@@ -1,45 +1,21 @@
-const R = require('ramda')
-    , Busboy = require('busboy')
-    , path = require('path')
-    , fs = require('fs')
-    , events = require('events')
-    , sequelize = require('sequelize')
-    , Op = require('sequelize').Op;
-
-//internal modules
-const filePath = __dirname + '/../../public'
-    , {User, File} = require('../models');
+const R = require('ramda');
+const {User} = require('../models');
 
 const create = async (req, res) => {
-    let userData = {};
-
-    let user;
-    try {
-        user = await User.create(userData);
-        console.log('usersController.js :22', user);
-    }catch (e) {
-        return res.status(502).send({
-            message: 'Cannot create a user',
-            meta: {
-                error: e.message,
-                userData
-            }
-        });
-    }
+    await User.create(req.body);
+    res.sendStatus(200);
 };
 
 const update = async (req, res) => {
 
-    let userId = req.params.id === 'me' ? req.session.passport.user : req.params.id;
-
     let user = null;
     try {
-        user = await User.findByPk(userId);
+        user = await User.findByPk(req.params.id);
 
         if (!user)
             return res.status(404).send({
                 message: 'User was not found',
-                meta: {userId}
+                meta: {userId: req.params.id}
             });
 
     } catch (e) {
@@ -47,129 +23,55 @@ const update = async (req, res) => {
             message: 'Some error occurred while searching user',
             meta: {
                 error: e.message,
-                userId
+                userId: req.params.id
             }
         });
     }
 
-    let busboy = new Busboy({headers: req.headers});
-    let userData = {}, fileProvided = false;
-    const em = new events.EventEmitter();
+    await user.update(req.body);
+    res.sendStatus(200);
+};
 
-    busboy.on('field', (fieldname, val) => {
-        console.log('Field [' + fieldname + ']: value: ' + val);
-
-        if (fieldname === 'userData') {
-            try{
-                userData = JSON.parse(val);
-            } catch (e) {
-                return res.status(502).send({
-                    message: 'Field userData must be stringified object',
-                    meta: {
-                        error: e.message,
-                        userData
-                    }
-                });
-            }
-        }
-    });
-
-    busboy.on('file', async (fieldname, file, filename, encoding, mimetype) => {
-        fileProvided = true;
-
-        //validate file type
-        if (R.not(R.equals(R.head(R.split('/', mimetype)), 'image'))) {
-            console.log('Not allowed file type');
-            return em.emit('uploadFinished');
-        }
-
-        //validate file size
-        if (req.headers['content-length'] / 1024 > 400) {
-            console.log('Not allowed file size');
-            return em.emit('uploadFinished');
-        }
-
-        let name = `${userId}-avatar`;
-        let saveTo = path.join(filePath, name);
-        let data = {
-            userId,
-            location: `/api/public/${name}`
-        };
-
-        //first, delete old avatar if exist
-        try {
-            fs.unlinkSync(saveTo);
-            await File.destroy({where: data});
-        } catch (e) {
-            //@todo send to kibana
-            console.log('Failed to delete file model or unlink file (avatar): ', e);
-        }
-
-        file.on('error', error => {
-            //@todo send to kibana and add error handler
-            console.log('Upload avatar failed with error: ', error);
-            em.emit('uploadFinished');
-        });
-
-        file.on('end', async () => {
-            //create file model or delete file from fs if got error
-            try {
-                let file = await File.create(data);
-                userData.avatar = file.id;
-
-            } catch (e) {
-                console.log('Failed to create file model (avatar): ', e);
-                fs.unlinkSync(saveTo);
-            }
-            em.emit('uploadFinished');
-        });
-        file.pipe(fs.createWriteStream(saveTo));
-    });
-
-    busboy.on('error', e => {
-        console.log('Upload failed: ', e);
-        res.status(502).send({
-            message: 'Some error occurred while file/s uploading',
-            meta: { error: e.message }
-        });
-    });
-
-    busboy.on('finish', async () => {
-        console.log('Upload complete');
-
-        try {
-            //@todo REFACTOR
-            if (fileProvided) {
-
-                em.on('uploadFinished', async () => {
-                    //update user model
-                    await helper.updateUserWithAssociations({user, userData});
-                    res.sendStatus(201);
-                });
-
-            } else {
-
-                //update user model
-                await helper.updateUserWithAssociations({user, userData});
-                res.sendStatus(201);
-            }
-
-        } catch (e) {
-            console.log('Failed to update user model: ', e);
-            res.status(502).send({
-                message: 'Some error occurred while updating a user',
-                meta: {
-                    error: e.message,
-                    userData
-                }
+const destroy = async (req, res) => {
+    try {
+        let user = await User.findByPk(req.params.id);
+        if (!user)
+            return res.status(404).send({
+                message: 'Cannot find user with provided id',
+                meta: { userId: req.params.id }
             });
-        }
-    });
 
-    req.pipe(busboy);
+        await user.destroy();
+        res.sendStatus(204);
+    }catch (e) {
+        return res.status(502).send({
+            message: 'Some error occurred while trying to delete user',
+            meta: {
+                error: e.message,
+                userId: req.params.id,
+            }
+        });
+    }
+};
+
+const find = async (req, res) => {
+    let users = [];
+    try {
+        users = await User.findAll();
+        users = R.map(user => user.toJSON(), users);
+    } catch (e) {
+        return res.status(502).send({
+            message: 'Some error occurred while searching the users',
+            meta: {error: e.message}
+        });
+    }
+
+    res.status(200).json(users);
 };
 
 module.exports = {
     create,
     update,
+    destroy,
+    find
 };

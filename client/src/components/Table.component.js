@@ -1,41 +1,15 @@
 import React, { useEffect, useState }  from 'react';
-import { Table, Divider } from 'antd';
+import { Table, Divider, message } from 'antd';
 import axios from 'axios';
+import { Dialog } from 'components';
 
-const { Column, ColumnGroup } = Table;
-
-const data = [
-    {
-        key: '1',
-        firstName: 'John',
-        lastName: 'Brown',
-        birthDate: '14.01.1983',
-        phone: '+79175376087',
-        email: 'mts_test1@mts.com',
-    },
-    {
-        key: '2',
-        firstName: 'Jim',
-        lastName: 'Green',
-        birthDate: '11.03.1970',
-        phone: '+79161257785',
-        email: 'mts_test2@mts.com',
-    },
-    {
-        key: '3',
-        firstName: 'Joe',
-        lastName: 'Black',
-        birthDate: '02.02.1902',
-        phone: '+79101112536',
-        email: 'mts_test3@mts.com',
-    },
-];
-
-
+require('antd/lib/table/style/css');
+require('antd/lib/divider/style/css');
+require('antd/lib/button/style/css');
+require('antd/lib/message/style/css');
 
 const TableComponent = () => {
-    //@todo remove data
-    const [users, setUsers] = useState(/*[]*/data);
+    const [users, setUsers] = useState([]);
 
     async function getUsers () {
         try {
@@ -50,33 +24,36 @@ const TableComponent = () => {
         }
     }
 
-    async function handleClickEdit (e) {
-        e.preventDefault();
+    async function handleClickAdd ({data}) {
         try {
-            const response = await axios.put(`/api/users`);
-            if (response.status === 200) {
-                setUsers(response.data);
-            } else {
-                console.log('Cannot get users');
-            }
+            await axios.post(`/api/users`, data);
+            getUsers();
         } catch (e) {
-            console.log('Cannot get users: ', e);
+            console.log('Cannot add user: ', e);
+            message.error('Что-то пошло не так');
         }
     }
 
-    async function handleClickDelete (e) {
-        e.preventDefault();
+    async function handleClickEdit ({data, userId}) {
         try {
-            const response = await axios.delete(`/api/users`);
-            if (response.status === 204) {
-                setUsers(response.data);
-            } else {
-                console.log('Cannot get users');
-            }
+            await axios.put(`/api/users/${userId}`, data);
+            getUsers();
         } catch (e) {
-            console.log('Cannot get users: ', e);
+            console.log('Cannot update user: ', e);
+            message.error('Что-то пошло не так');
         }
     }
+
+    const handleClickDelete = async (e) => {
+        e.preventDefault();
+        try {
+            await axios.delete(`/api/users/${e.target.id}`);
+            getUsers();
+        } catch (err) {
+            console.log('Cannot get users: ', err);
+            message.error('Что-то пошло не так');
+        }
+    };
 
     useEffect(() => {
         getUsers();
@@ -84,45 +61,72 @@ const TableComponent = () => {
 
     const columns = [
         {
+            title: 'Avatar',
+            dataIndex: 'avatar',
+            key: 'avatar',
+            width: '15%',
+            render: (text, record) => {
+                return (<img src={record.avatar} alt={"user avatar"} />);
+            }
+        },
+        {
             title: 'First Name',
             dataIndex: 'firstName',
             key: 'firstName',
+            width: '15%'
         },
         {
             title: 'Last Name',
             dataIndex: 'lastName',
             key: 'lastName',
+            width: '15%'
         },
         {
             title: 'Birth Date',
             dataIndex: 'birthDate',
             key: 'birth',
+            width: '15%'
         },
         {
             title: 'Email',
             dataIndex: 'email',
             key: 'email',
+            width: '15%'
         },
         {
             title: 'Phone',
             dataIndex: 'phone',
             key: 'phone',
+            width: '15%'
+        },
+        {
+            title: 'Position',
+            dataIndex: 'position',
+            key: 'position',
+            width: '15%'
         },
         {
             title: 'Action',
             key: 'action',
-            render: (text, record) => (
-                <span>
-                <a href="" onClick={handleClickEdit}>Edit</a>
-                <Divider type="vertical" />
-                <a href="" onClick={handleClickDelete}>Delete</a>
-            </span>
-            )
+            render: (text, record) => {
+                return (
+                    <span>
+                        <Dialog user={record} modalText={'Edit user'} buttonName={'Edit'} handleSubmit={handleClickEdit}/>
+                        <Divider type="vertical" />
+                        <a href="" id={record.id} onClick={handleClickDelete}>
+                            Delete
+                        </a>
+                    </span>
+                )
+            }
         },
     ];
 
     return (
-        <Table dataSource={users} columns={columns} pagination={false} />
+        <div>
+            <Dialog modalText={'Add user'} buttonName={'Add user'} isButton={true} handleSubmit={handleClickAdd}/>
+            <Table dataSource={users} columns={columns} pagination={false} />
+        </div>
         );
 };
 

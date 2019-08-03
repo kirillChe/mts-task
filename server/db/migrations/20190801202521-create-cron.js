@@ -1,24 +1,21 @@
 'use strict';
 module.exports = {
     up: async (queryInterface, Sequelize) => {
-        await queryInterface.createTable('Files', {
+        await queryInterface.createTable('CronData', {
             id: {
                 allowNull: false,
                 autoIncrement: true,
                 primaryKey: true,
                 type: Sequelize.INTEGER(11).UNSIGNED
             },
-            userId: {
+            periodValue: {
                 allowNull: false,
-                type: Sequelize.INTEGER(11).UNSIGNED,
-                references: {
-                    model: 'Users',
-                    key: 'id'
-                }
+                type: Sequelize.ENUM('days', 'hours'),
+                defaultValue: 'hours'
             },
-            location: {
+            numberValue: {
                 allowNull: false,
-                type: Sequelize.STRING(60)
+                type: Sequelize.INTEGER(9)
             },
             createdAt: {
                 allowNull: false,
@@ -32,16 +29,9 @@ module.exports = {
             }
         });
 
-        return queryInterface.addIndex(
-            'Files',
-            ['location'],
-            {
-                indexName: 'uniqImage',
-                unique: true
-            }
-        );
+        return queryInterface;
     },
     down: (queryInterface) => {
-        return queryInterface.dropTable('Files');
+        return queryInterface.dropTable('CronData');
     }
 };

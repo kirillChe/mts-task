@@ -1,0 +1,10 @@
+{
+    "mailer": {
+        "service": "Gmail",
+        "secure": false,
+        "auth": {
+            "user": "mts.it.task@gmail.com",
+            "pass": "mwcunjdghmbbzpsr"
+        }
+    }
+}

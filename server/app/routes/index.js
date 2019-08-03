@@ -1,9 +1,9 @@
 const usersRoutes = require('./users');
-const filesRoutes = require('./files');
+const cronsRoutes = require('./cronData');
 
 
 module.exports = app => {
 
     app.use('/api/users', usersRoutes);
-    app.use('/api/files', filesRoutes);
+    app.use('/api/crons', cronsRoutes);
 };

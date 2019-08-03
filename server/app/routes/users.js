@@ -3,11 +3,12 @@ const userCtrl = require('../controllers/usersController');
 const router = express.Router();
 
 
-router.route('/').post(userCtrl.create);
+router.route('/').post(userCtrl.create)
+    .get(userCtrl.find);
 
-router.route('/:id').put(userCtrl.update);
+router.route('/:id').put(userCtrl.update)
 
     /** DELETE /api/users/:userId - Delete user */
-    // .delete(userCtrl.destroy);
+    .delete(userCtrl.destroy);
 
 module.exports = router;

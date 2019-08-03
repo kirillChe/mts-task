@@ -16,12 +16,12 @@ module.exports = {
                 allowNull: false,
                 type: Sequelize.STRING(30)
             },
-            userType: {
+            position: {
                 allowNull: false,
                 type: Sequelize.STRING(30)
             },
             avatar: {
-                type: Sequelize.INTEGER(11).UNSIGNED
+                type: Sequelize.TEXT
             },
             email: {
                 allowNull: false,
@@ -33,6 +33,7 @@ module.exports = {
                 type: Sequelize.STRING(20)
             },
             birthDate: {
+                allowNull: false,
                 type: Sequelize.DATE
             },
             createdAt: {
@@ -47,14 +48,7 @@ module.exports = {
             }
         });
 
-        return queryInterface.addIndex(
-            'Users',
-            ['email'],
-            {
-                indexName: 'uniqUser',
-                unique: true
-            }
-        );
+        return queryInterface;
     },
     down: (queryInterface) => {
         return queryInterface.dropTable('Users');

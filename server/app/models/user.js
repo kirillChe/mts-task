@@ -3,18 +3,22 @@
 module.exports = (sequelize, DataTypes) => {
     const User = sequelize.define('User', {
         firstName: {
+            allowNull: false,
             type: DataTypes.STRING(30)
         },
         lastName: {
+            allowNull: false,
             type: DataTypes.STRING(30)
         },
-        userType: {
+        position: {
+            allowNull: false,
             type: DataTypes.STRING(30)
         },
         avatar: {
-            type: DataTypes.INTEGER(11)
+            type: DataTypes.TEXT
         },
         phone: {
+            allowNull: false,
             type: DataTypes.STRING(20)
         },
         email: {
@@ -25,6 +29,7 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         birthDate: {
+            allowNull: false,
             type: DataTypes.DATE
         },
         updatedAt: {
@@ -37,18 +42,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: DataTypes.NOW,
             allowNull: false
         }
-    }, {
-        indexes: [
-            {
-                unique: true,
-                fields: ['email']
-            }
-        ]
-    });
-
-    User.associate = models => {
-        User.hasMany(models.File, {foreignKey: 'userId', as: 'files', onDelete: 'cascade', hooks: true });
-    };
+    }, {});
 
     return User;
 };
