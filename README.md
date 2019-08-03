@@ -13,7 +13,8 @@ Steps:
   `docker exec -it backmts /bin/bash`
 5. Fill the database:
   `npm run db:fill`
-6. Enjoy!
+6. Open `http://localhost:3101/` in your browser.
+7. Enjoy!
 
 ## The app is running on port 3101
 ## PHPMyAdmin is on port 6111
